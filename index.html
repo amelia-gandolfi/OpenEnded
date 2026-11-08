@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenEnded</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600&family=Shantell+Sans:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#141412;
+    --paper:#FFFFFF;
+    --muted:#6E6C64;
+    --blue:#2B4FE3;
+    --tomato:#F4442E;
+    --green:#1E9E57;
+    --yellow:#FFC700;
+    --violet:#7A3FE4;
+    --pink:#FF72B1;
+    --sans:"DM Sans",ui-sans-serif,system-ui,sans-serif;
+    --display:"Bricolage Grotesque",var(--sans);
+    --marker:"Shantell Sans",var(--sans);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:#fff;color:var(--ink);
+    font:400 15px/1.5 var(--sans);
+    overflow:hidden;-webkit-font-smoothing:antialiased;
+  }
+
+  .scatter{position:fixed;inset:0;pointer-events:none;z-index:1}
+  .obj{position:absolute;filter:drop-shadow(0 14px 10px rgba(20,20,18,.13))}
+  .obj svg{display:block;width:100%;height:100%;overflow:visible}
+
+  .song{
+    width:400px;height:248px;top:28px;left:36px;
+    background:var(--blue);
+    border-radius:120px 166px 96px 180px;
+    transform:rotate(-14deg);
+  }
+  .tomato{width:300px;height:360px;top:20px;right:32px;transform:rotate(12deg)}
+  .sound{
+    width:250px;height:250px;top:34vh;left:28px;
+    background:var(--violet);border-radius:50%;
+    transform:rotate(-8deg);
+  }
+  .note{
+    width:260px;height:170px;top:44vh;right:24px;
+    background:var(--yellow);
+    transform:rotate(8deg);
+  }
+  .pink{width:400px;height:290px;bottom:20px;left:28px;transform:rotate(-8deg)}
+  .writing{
+    width:360px;height:240px;bottom:24px;right:32px;
+    background:var(--green);
+    border-radius:54px 140px 70px 108px;
+    transform:rotate(6deg);
+  }
+  .sprout{
+    width:240px;height:156px;top:16px;left:34vw;
+    background:var(--blue);
+    border-radius:96px 130px 78px 118px;
+    transform:rotate(8deg);
+  }
+  .pebble{
+    width:210px;height:210px;bottom:18px;left:42vw;
+    background:var(--violet);border-radius:50%;
+    transform:rotate(-6deg);
+  }
+  .curl{width:210px;height:190px;top:58vh;left:20px;transform:rotate(16deg)}
+
+  main{
+    position:relative;z-index:2;
+    min-height:100%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:24px;
+  }
+  h1{
+    font:800 clamp(64px, 12vw, 132px)/.86 var(--display);
+    letter-spacing:-.065em;
+    max-width:100%;
+  }
+  .tag{
+    margin-top:14px;
+    font:500 clamp(26px, 3vw, 34px)/1.25 var(--marker);
+  }
+  .enter{
+    display:inline-block;margin-top:32px;
+    background:var(--blue);color:#fff;text-decoration:none;
+    font:400 15px/1 var(--sans);letter-spacing:.04em;
+    padding:16px 28px;border-radius:999px;
+  }
+  .enter:hover{background:#2446cc}
+  .enter:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+
+  @media (max-width:760px){
+    .song{width:250px;height:156px;left:8px;top:8px}
+    .tomato{width:190px;height:230px;top:8px;right:8px}
+    .sound{width:150px;height:150px;left:8px;top:32vh}
+    .note{width:200px;height:130px;right:8px;top:40vh}
+    .pink{width:240px;height:176px;left:8px;bottom:8px}
+    .writing{width:210px;height:140px;right:8px;bottom:8px}
+    .sprout{width:150px;height:98px;left:28vw;top:8px}
+    .pebble{width:130px;height:130px;left:38vw;bottom:8px}
+    .curl{width:140px;height:126px;left:8px;top:58vh}
+    h1{font-size:clamp(56px, 16vw, 72px)}
+    .tag{font-size:22px}
+  }
+</style>
+</head>
+<body>
+
+<div class="scatter" aria-hidden="true">
+  <div class="obj song"></div>
+  <div class="obj tomato"><svg viewBox="0 0 160 200"><path fill="#F4442E" d="M78 14Q104 4 118 26Q146 16 152 44Q174 58 146 74Q176 92 150 112Q170 140 128 156Q108 186 74 162Q42 178 26 148Q4 126 28 104Q6 78 30 58Q12 34 42 30Q54 10 78 14Z"/></svg></div>
+  <div class="obj sound"></div>
+  <div class="obj note"></div>
+  <div class="obj pink"><svg viewBox="0 0 210 160"><path fill="#FF72B1" d="M48 28Q28 40 36 58Q14 66 24 86Q8 104 32 120Q28 146 62 142Q86 164 118 146Q148 166 176 140Q198 122 184 98Q206 78 182 58Q196 34 164 26Q140 6 108 18Q78 4 48 28Z"/></svg></div>
+  <div class="obj writing"></div>
+  <div class="obj sprout"></div>
+  <div class="obj pebble"></div>
+  <div class="obj curl"><svg viewBox="0 0 110 100"><path fill="#FF72B1" d="M36 16Q18 28 28 44Q10 52 22 68Q16 88 42 90Q64 104 84 82Q102 68 90 50Q104 34 82 24Q70 6 48 12Q38 6 36 16Z"/></svg></div>
+</div>
+
+<main>
+  <h1>OpenEnded</h1>
+  <p class="tag">Create with strangers.</p>
+  <a class="enter" href="name.html">find a world</a>
+</main>
+
+</body>
+</html>

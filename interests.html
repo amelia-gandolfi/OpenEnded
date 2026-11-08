@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What are you into? — Makeshift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600&family=Shantell+Sans:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#141412;
+    --sans:"DM Sans",ui-sans-serif,system-ui,sans-serif;
+    --marker:"Shantell Sans",var(--sans);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:#fff;color:var(--ink);
+    font:400 16px/1.4 var(--sans);
+    min-height:100%;
+    -webkit-font-smoothing:antialiased;
+  }
+  main{
+    min-height:100%;
+    display:flex;flex-direction:column;align-items:center;
+    padding:7vh 24px 40px;
+  }
+  h1{
+    font:500 clamp(34px, 5vw, 48px)/1.15 var(--marker);
+    text-align:center;
+  }
+  .field{
+    width:min(420px, 100%);
+    margin-top:28px;
+    display:flex;flex-direction:column;align-items:center;gap:12px;
+  }
+  .pill{
+    border:none;cursor:pointer;color:#fff;
+    font:600 16px/1 var(--sans);
+    padding:14px 20px;border-radius:999px;
+    box-shadow:0 10px 16px -12px rgba(20,20,18,.55);
+    transform:rotate(var(--r)) translateX(var(--x));
+  }
+  .pill:hover{filter:brightness(1.06)}
+  .pill:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+  .pill.ink{background:#141412}
+  .pill.yellow{background:#FFC700;color:#141412}
+
+  #beat{
+    position:fixed;inset:0;z-index:20;background:#fff;
+    display:none;align-items:center;justify-content:center;
+    font:500 clamp(28px, 4vw, 40px)/1.2 var(--marker);
+  }
+  #beat.on{display:flex}
+
+  @media (max-width:700px){
+    .pill{font-size:15px;padding:12px 16px}
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>what are you into?</h1>
+  <div class="field" id="field"></div>
+</main>
+<div id="beat">putting you somewhere…</div>
+<script>
+const pills = [
+  {label:'morning walks',     color:'#2B4FE3', land:'n4', r:'-3deg', x:'-18px'},
+  {label:'train stations',    color:'#F4442E', land:'n5', r:'2deg',  x:'22px'},
+  {label:'architecture',      color:'#1E9E57', land:'n3', r:'-2deg', x:'-8px'},
+  {label:'film photography',  color:'yellow',  land:'n3', r:'3deg',  x:'16px'},
+  {label:'crochet',           color:'#7A3FE4', land:'n4', r:'-4deg', x:'-24px'},
+  {label:'the moon',          color:'#FF72B1', land:'n5', r:'2deg',  x:'12px'},
+  {label:'secondhand books',  color:'#2B4FE3', land:'n4', r:'-2deg', x:'-12px'},
+  {label:'record stores',     color:'#1E9E57', land:'n4', r:'3deg',  x:'20px'},
+  {label:'surprise me',       color:'ink',     land:'',   r:'-3deg', x:'0px'}
+];
+const open = ['n3','n4','n5','n6'];
+const field = document.getElementById('field');
+const beat = document.getElementById('beat');
+
+field.innerHTML = pills.map(p => `
+  <button class="pill${p.color === 'yellow' || p.color === 'ink' ? ' ' + p.color : ''}"
+    style="${p.color.startsWith('#') ? 'background:' + p.color + ';' : ''}--r:${p.r};--x:${p.x}"
+    data-land="${p.land}" data-label="${p.label}">${p.label}</button>`).join('');
+
+let going = false;
+field.addEventListener('click', e => {
+  const b = e.target.closest('.pill');
+  if(!b || going) return;
+  going = true;
+  const label = b.dataset.label;
+  const land = label === 'surprise me'
+    ? open[Math.floor(Math.random() * open.length)]
+    : b.dataset.land;
+  sessionStorage.setItem('makeshift-interest', label);
+  sessionStorage.setItem('makeshift-land', land);
+  beat.classList.add('on');
+  setTimeout(() => { location.href = 'world-prototype.html'; }, 1100);
+});
+</script>
+</body>
+</html>

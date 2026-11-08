@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Art of Crochet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600&family=Shantell+Sans:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#FAF9F5;
+    --ink:#141412;
+    --paper:#FFFFFF;
+    --muted:#6E6C64;
+    --hair:rgba(20,20,18,.12);
+
+    --t1:#2B4FE3; --p1:#DCE4FF;
+    --t2:#FF72B1; --p2:#FFDCEB;
+    --t3:#1E9E57; --p3:#D4F0DE;
+    --t4:#FFC700; --p4:#FFF0B8;
+    --t5:#7A3FE4; --p5:#E6DCFF;
+    --t6:#FF72B1; --p6:#FFDCEB;
+
+    --sans:"DM Sans",ui-sans-serif,system-ui,sans-serif;
+    --display:"Bricolage Grotesque",var(--sans);
+    --marker:"Shantell Sans",var(--sans);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--ground);color:var(--ink);
+    font:400 15px/1.5 var(--sans);
+    overflow:hidden;-webkit-font-smoothing:antialiased;
+  }
+
+  #stage{position:fixed;inset:0;cursor:grab;overflow:hidden}
+  #stage.dragging{cursor:grabbing}
+  #canvas{position:absolute;left:50%;top:50%;transform-origin:0 0;will-change:transform}
+  #links{position:absolute;left:-5000px;top:-5000px;width:10000px;height:10000px;overflow:visible;pointer-events:none}
+  #links path{transition:opacity .35s ease}
+  #canvas[data-missing="true"] #links path{opacity:.15}
+
+  /* ---------- physical contributions ---------- */
+  .node{
+    position:absolute;width:260px;
+    --sat:var(--t1); --tint:var(--p1);
+    transform:translate(-50%,-50%);
+    transition:opacity .35s ease;
+  }
+  .node.dim{opacity:.28}
+  .node.dim:hover{opacity:.5}
+  .node[data-thread="4"] .ask,
+  .node[data-thread="4"] .sticker,
+  .node[data-thread="4"].kind-song .form,
+  .node[data-thread="4"].kind-sound .form{color:var(--ink)}
+  .node[data-thread="4"] .ask button{color:var(--ink);border-color:rgba(20,20,18,.35)}
+  .node[data-thread="4"] .ask button:hover{background:var(--ink);color:var(--paper)}
+  .node[data-thread="4"] .ask .count{color:rgba(20,20,18,.62)}
+  .node[data-thread="4"].kind-song img.art.mark,
+  .node[data-thread="4"].kind-sound img.art.mark{filter:none;mix-blend-mode:multiply}
+
+  .form{position:relative}
+  .meta{
+    display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    font:600 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;
+  }
+  .meta .by{letter-spacing:.02em;text-transform:none;font-size:13px;font-weight:600}
+  .body{font:400 14.5px/1.45 var(--sans);color:var(--ink);white-space:pre-line}
+  .piece{font:600 16px/1.3 var(--sans);letter-spacing:-.02em;margin-top:8px}
+
+  .sticker{
+    position:absolute;z-index:2;top:-12px;left:-10px;
+    background:var(--sat);color:#fff;
+    font:600 10px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;
+    padding:8px 11px 7px;
+    border-radius:46% 54% 42% 58% / 52% 40% 60% 48%;
+    transform:rotate(-11deg);
+    box-shadow:0 6px 10px -8px rgba(20,20,18,.6);
+  }
+
+  .shell{position:relative}
+  .ask{
+    position:absolute;left:0;right:0;top:calc(100% + 10px);
+    background:var(--sat);color:#fff;
+    border-radius:18px 22px 16px 20px;
+    padding:13px 14px 12px;
+    box-shadow:0 10px 18px -14px rgba(20,20,18,.7);
+    transform:rotate(-1.2deg);
+  }
+  .ask .q{font:500 17px/1.25 var(--marker);color:inherit}
+  .ask .row{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .ask button{
+    font:400 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+    background:transparent;border:1px solid rgba(255,255,255,.75);border-radius:999px;
+    padding:7px 12px;cursor:pointer;color:#fff;
+  }
+  .ask button:hover{background:#fff;color:var(--sat)}
+  .ask .count{font:400 12px/1 var(--sans);color:rgba(255,255,255,.78)}
+  .ask .face{
+    position:absolute;top:-18px;right:-12px;width:38px;height:38px;
+    transform:rotate(8deg);filter:drop-shadow(0 4px 4px rgba(20,20,18,.16));
+  }
+
+  /* photo — a print */
+  .kind-photo{width:248px}
+  .kind-photo .form{
+    background:var(--paper);
+    padding:38px 14px 16px;
+    box-shadow:0 1px 1px rgba(20,20,18,.05), 0 18px 32px -18px rgba(20,20,18,.5);
+    transform:rotate(-1.4deg);
+  }
+  .kind-photo .by{
+    position:absolute;top:14px;right:16px;z-index:2;
+    font:600 12px/1 var(--sans);color:var(--ink);
+  }
+  .kind-photo img.art{
+    display:block;width:100%;height:206px;object-fit:cover;object-position:center 62%;
+  }
+  .kind-photo img.art.stitch{
+    height:320px;object-position:center 38%;
+  }
+  .kind-photo img.art.sweater{
+    height:200px;object-fit:contain;object-position:center;background:var(--paper);
+  }
+  .kind-photo img.art.worn{
+    height:280px;object-position:center;
+  }
+  .kind-photo .caption{
+    font:500 17px/1.25 var(--marker);color:var(--ink);
+    padding:14px 4px 2px;
+  }
+
+  /* writing — colored paper */
+  .kind-writing{width:300px}
+  .kind-writing .form{
+    background:var(--tint);color:var(--ink);
+    padding:18px 18px 16px;
+    box-shadow:0 16px 28px -20px rgba(20,20,18,.45);
+    transform:rotate(.7deg);
+  }
+  .kind-writing .writing{
+    max-height:300px;overflow:auto;margin-top:12px;
+    color:var(--ink);font:400 13.5px/1.45 var(--sans);cursor:auto;
+  }
+  .kind-writing .writing::-webkit-scrollbar{width:8px}
+  .kind-writing .writing::-webkit-scrollbar-thumb{background:rgba(20,20,18,.28);border-radius:8px}
+  .kind-writing .writing h3{font:600 18px/1.25 var(--sans);margin-bottom:8px;letter-spacing:-.02em}
+  .kind-writing .writing .lead{margin-bottom:4px}
+  .kind-writing .writing .when{
+    margin:14px 0 4px;font:600 10.5px/1 var(--sans);letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);
+  }
+  .kind-writing .writing p + p{margin-top:8px}
+  .kind-writing .body{margin-top:14px;padding-top:12px;border-top:1px solid rgba(20,20,18,.12)}
+
+  /* song — a sticker */
+  .kind-song{width:312px}
+  .kind-song .form{
+    background:var(--sat);color:#fff;
+    border-radius:58% 42% 48% 52% / 44% 56% 40% 60%;
+    padding:42px 40px 38px;
+    text-align:center;
+    box-shadow:0 14px 22px -16px rgba(20,20,18,.55);
+    transform:rotate(-7deg);
+  }
+  .kind-song .meta{justify-content:center;gap:8px;color:inherit}
+  .kind-song .meta .by{color:inherit}
+  .kind-song .piece,.kind-song .body{color:inherit}
+  .kind-song .body{font-size:13.5px;margin-top:6px}
+  .kind-song img.art.mark{
+    display:block;height:46px;width:88%;margin:12px auto 4px;
+    object-fit:contain;filter:invert(1);mix-blend-mode:screen;
+  }
+
+  /* drawing — taped paper */
+  .kind-drawing{width:252px}
+  .kind-drawing .form{
+    background:var(--paper);
+    padding:22px 14px 16px;
+    box-shadow:0 16px 26px -18px rgba(20,20,18,.5);
+    transform:rotate(1.8deg);
+  }
+  .tape{
+    position:absolute;z-index:3;width:48px;height:14px;
+    background:var(--sat);opacity:.42;
+  }
+  .tape.l{top:-6px;left:18px;transform:rotate(-32deg)}
+  .tape.r{top:-5px;right:16px;transform:rotate(26deg)}
+  .kind-drawing img.art.sheet{
+    display:block;width:100%;height:300px;margin-top:12px;
+    object-fit:cover;object-position:center 46%;background:var(--paper);
+  }
+  .kind-drawing img.art.sketch{
+    display:block;width:100%;height:220px;margin-top:12px;
+    object-fit:contain;object-position:center;background:var(--paper);
+  }
+  .kind-drawing img.art.colors{
+    display:block;width:100%;height:300px;margin-top:12px;
+    object-fit:contain;object-position:center;background:var(--paper);
+  }
+  .kind-drawing .body{margin-top:12px}
+
+  /* sound — a small round object */
+  .kind-sound{width:268px}
+  .kind-sound .form{
+    width:220px;height:220px;margin:0 auto;
+    background:var(--sat);color:#fff;
+    border-radius:50% 48% 52% 50% / 48% 52% 50% 46%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:28px 26px;
+    box-shadow:0 14px 22px -16px rgba(20,20,18,.55);
+  }
+  .kind-sound .meta{justify-content:center;gap:6px;color:inherit;font-size:10px}
+  .kind-sound .meta .by{color:inherit;font-size:12px}
+  .kind-sound .body{color:inherit;font-size:12px;line-height:1.3;margin-top:4px}
+  .kind-sound img.art.mark{
+    display:block;height:34px;width:78%;margin:6px auto 2px;
+    object-fit:contain;filter:invert(1);mix-blend-mode:screen;
+  }
+
+  /* caption and poem — a scrap of tinted paper */
+  .kind-caption .form,.kind-poem .form{
+    background:var(--tint);color:var(--ink);
+    padding:16px 16px 14px;
+    box-shadow:0 14px 24px -18px rgba(20,20,18,.4);
+    transform:rotate(-1deg);
+  }
+  .kind-caption .body,.kind-poem .body{margin-top:10px}
+
+  .node svg.art{display:block;width:100%;height:92px;margin-top:10px}
+
+  /* ---------- zoomed-out form ---------- */
+  .node .dot{display:none;text-align:center}
+  .node .dot i{
+    display:block;width:72px;height:72px;border-radius:50%;
+    background:var(--sat);margin:0 auto;
+  }
+  .node .dot b{
+    display:block;margin-top:14px;font:600 22px/1 var(--sans);
+    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  }
+  #canvas[data-lod="dots"] .node{width:160px}
+  #canvas[data-lod="dots"] .shell{display:none}
+  #canvas[data-lod="dots"] .dot{display:block}
+  #canvas[data-lod="mid"] .kind-photo img.art{height:150px}
+  #canvas[data-lod="mid"] .kind-photo img.art.stitch{height:230px}
+  #canvas[data-lod="mid"] .kind-photo img.art.sweater{height:150px}
+  #canvas[data-lod="mid"] .kind-photo img.art.worn{height:200px}
+  #canvas[data-lod="mid"] .kind-drawing img.art.sheet{height:220px}
+  #canvas[data-lod="mid"] .kind-drawing img.art.sketch{height:180px}
+  #canvas[data-lod="mid"] .kind-drawing img.art.colors{height:220px}
+  #canvas[data-lod="mid"] .kind-writing .writing{max-height:160px}
+  #canvas[data-lod="mid"] .ask .row{display:none}
+
+  /* ---------- chrome ---------- */
+  .hud{position:fixed;z-index:10}
+  #title{left:30px;top:26px;max-width:calc(100vw - 720px);pointer-events:none}
+  #title h1{font:800 56px/.88 var(--display);letter-spacing:-.06em}
+  #title p{
+    margin-top:12px;font:400 12px/1.3 var(--sans);letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);
+  }
+  #tools{right:30px;top:28px;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:9px;max-width:calc(100vw - 360px)}
+  #zoomctl{left:30px;bottom:28px;display:flex;gap:7px;align-items:center}
+  #zoomctl .pct{font:400 12px/1 var(--sans);letter-spacing:.08em;color:var(--muted);margin-left:5px}
+  .btn{
+    font:400 12px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+    background:var(--paper);border:1px solid var(--hair);border-radius:999px;
+    padding:10px 17px;cursor:pointer;color:var(--ink);
+  }
+  .btn.sq{border-radius:3px;padding:10px 14px;min-width:40px}
+  .btn:hover{border-color:var(--ink)}
+  .btn[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+
+  #beat{
+    position:fixed;inset:0;z-index:40;display:none;
+  }
+  #beat.on{display:block}
+  #beat p{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    margin:0;max-width:min(480px, calc(100vw - 48px));
+    padding:26px 42px;background:var(--paper);color:var(--ink);
+    border-radius:999px;text-align:center;
+    font:500 22px/1.3 var(--marker);
+    box-shadow:0 18px 32px -16px rgba(20,20,18,.4);
+  }
+
+
+  /* ---------- respond panel ---------- */
+  #panel{
+    position:fixed;right:0;top:0;bottom:0;width:420px;z-index:20;
+    background:var(--paper);box-shadow:-20px 0 60px -30px rgba(20,20,18,.35);
+    padding:40px 36px;overflow-y:auto;
+    transform:translateX(100%);transition:transform .3s cubic-bezier(.3,.8,.3,1);
+  }
+  #panel.open{transform:none}
+  #panel .eyebrow{font:600 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  #panel .theq{font:500 26px/1.25 var(--marker);margin:14px 0 6px;color:var(--ink)}
+  #panel .asker{font:400 13px/1.4 var(--sans);color:var(--muted);margin-bottom:30px}
+  #panel label{
+    display:block;font:600 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);margin:24px 0 9px;
+  }
+  #panel textarea,#panel input{
+    width:100%;font:400 15px/1.5 var(--sans);padding:12px 13px;
+    background:var(--ground);border:1px solid transparent;border-radius:3px;color:var(--ink);
+  }
+  #panel textarea:focus,#panel input:focus{outline:none;border-color:var(--ink)}
+  #panel textarea{min-height:104px;resize:vertical}
+  .kinds{display:flex;flex-wrap:wrap;gap:7px}
+  .kinds button{
+    font:400 11.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+    padding:9px 14px;cursor:pointer;background:var(--ground);
+    border:1px solid transparent;border-radius:999px;color:var(--ink);
+  }
+  .kinds button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+  .connect{display:flex;flex-direction:column;gap:6px}
+  .connect button{
+    display:block;width:100%;text-align:left;cursor:pointer;
+    font:400 14px/1.35 var(--sans);color:var(--ink);
+    background:var(--ground);border:1px solid transparent;border-radius:3px;
+    padding:10px 12px;
+  }
+  .connect button[aria-pressed="true"]{border-color:var(--ink)}
+  .connect .who{font-weight:600}
+  .connect .snip{
+    display:block;margin-top:3px;color:var(--ink);
+    font:500 14px/1.3 var(--marker);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  #connect{display:none}
+  #panel.choosing #connect{display:block}
+  #asked{margin-top:0}
+  #panel.choosing #asked.on{margin-top:28px}
+  #asked:not(.on){display:none}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:9px;line-height:1.45}
+  #panel .actions{margin-top:32px;display:flex;gap:9px}
+  #panel .primary{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+  #panel .err{color:var(--t2);font-size:12.5px;margin-top:12px;display:none}
+  #panel .err.on{display:block}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="canvas" data-lod="full">
+    <svg id="links"></svg>
+  </div>
+</div>
+
+<div class="hud" id="title">
+  <h1>The Art of Crochet</h1>
+  <p><span id="count">0</span> contributions — <span id="openAsks">0</span> questions waiting</p>
+</div>
+
+<div class="hud" id="tools">
+  <button class="btn" id="quietBtn">add a contribution</button>
+  <button class="btn" id="timeBtn" aria-pressed="false">see what's been added</button>
+  <button class="btn" id="missingBtn" aria-pressed="false">see what's missing</button>
+  <button class="btn" id="worldsBtn">other worlds</button>
+</div>
+
+<div id="beat"><p>you can see the other worlds now.</p></div>
+
+<div class="hud" id="zoomctl">
+  <button class="btn sq" data-zoom="out">–</button>
+  <button class="btn sq" data-zoom="in">+</button>
+  <button class="btn sq" data-zoom="fit">fit</button>
+  <span class="pct" id="pct">55%</span>
+</div>
+
+<aside id="panel" aria-hidden="true">
+  <div id="connect">
+    <label>connect to</label>
+    <div class="connect" id="connectPick"></div>
+  </div>
+
+  <div id="asked">
+    <p class="eyebrow" id="panelEyebrow">someone asked</p>
+    <p class="theq" id="panelQ"></p>
+    <p class="asker" id="panelBy"></p>
+  </div>
+
+  <label>what are you adding</label>
+  <div class="kinds" id="kindPick"></div>
+
+  <label for="answerText">your answer</label>
+  <textarea id="answerText" placeholder="a line, a title, a description of what you made…"></textarea>
+
+  <label for="newAsk">leave a question next to it</label>
+  <input id="newAsk" placeholder="what should go next to this?">
+  <p class="hint">Required. Whoever finds this next needs something to do.</p>
+  <p class="err" id="err">Both fields are needed — the question is what keeps the world growing.</p>
+
+  <div class="actions">
+    <button class="btn primary" id="submitBtn">add to the world</button>
+    <button class="btn" id="cancelBtn">cancel</button>
+  </div>
+</aside>
+
+<script>
+/* ==================================================================
+   DATA — every contribution carries an ask. Asks never close.
+   thread 1-6 = line colour. week:1 = appears on "a week later".
+   ================================================================== */
+const KINDS = ['photo','song','caption','poem','writing','drawing','sound'];
+
+let nodes = [
+  {id:'n1', parent:null, thread:2, week:0, kind:'photo', by:'Nadia',
+   art:'nadia-new-stitch.jpg', fit:'stitch',
+   body:'new stitch design.',
+   ask:'what\'s this going to be? or what would should I make with it?', x:0, y:0},
+
+  {id:'n2', parent:'n1', thread:2, week:0, kind:'caption', by:'Jo',
+   body:'A sweater for someone who hasn’t asked for one yet.',
+   ask:'anyone have any other ideas?', x:270, y:360},
+
+  {id:'n3', parent:'n2', thread:2, week:0, kind:'photo', by:'Amelia',
+   art:'amelia-sweater.jpg', fit:'sweater',
+   body:'the sweater could be green and cream!',
+   ask:'can anyone make this?', x:10, y:620},
+
+  {id:'n4', parent:'n2', thread:2, week:0, kind:'photo', by:'Ari',
+   art:'ari-sweater.jpg', fit:'worn',
+   body:'I made this sweater last week for my sister.',
+   ask:'anyone have any ideas of something else I could make with this same pattern?', x:640, y:740},
+
+  {id:'n5', parent:'n4', thread:2, week:0, kind:'drawing', by:'Nadia',
+   art:'nadia-color-drawing.jpg', fit:'colors',
+   body:'I love these colors. Just did this drawing inspired by your sweater.',
+   ask:'what else do these colors remind you of?', x:980, y:260}
+];
+
+/* ==================================================================
+   ART — flat placeholders. Swap for <img src="..."> when you have
+   real images; just return an <img> tag from this function.
+   ================================================================== */
+function esc(s){
+  return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+}
+function writingHTML(w){
+  const pieces = w.pieces.map(p =>
+    `<p class="when">${esc(p.when)}</p>` +
+    p.paragraphs.map(t => `<p>${esc(t)}</p>`).join('')
+  ).join('');
+  return `<div class="writing"><h3>${esc(w.title)}</h3><p class="lead">${esc(w.lead)}</p>${pieces}</div>`;
+}
+
+function art(kind, thread, fit){
+  if(!kind) return '';
+  if(/\.(jpe?g|png|webp|gif)$/i.test(kind)){
+    return `<img class="art${fit ? ' ' + fit : ''}" src="${kind}" alt="">`;
+  }
+  const c = `var(--t${thread||1})`;
+  const paper = '#FFFFFF';
+  const S = {
+    platform:`<rect width="120" height="62" fill="${paper}"/><rect y="44" width="120" height="18" fill="${c}" opacity=".9"/><rect x="9" y="12" width="30" height="32" fill="${c}" opacity=".35"/><rect x="47" y="22" width="12" height="22" fill="${c}" opacity=".6"/><circle cx="96" cy="19" r="7" fill="${c}"/>`,
+    benches:`<rect width="120" height="62" fill="${paper}"/><rect y="48" width="120" height="14" fill="${c}" opacity=".3"/><rect x="14" y="32" width="30" height="5" fill="${c}"/><rect x="16" y="37" width="4" height="11" fill="${c}" opacity=".7"/><rect x="38" y="37" width="4" height="11" fill="${c}" opacity=".7"/><rect x="74" y="32" width="30" height="5" fill="${c}" opacity=".45"/><circle cx="84" cy="25" r="6" fill="${c}" opacity=".85"/>`,
+    figure:`<rect width="120" height="62" fill="${paper}"/><circle cx="60" cy="20" r="10" fill="${c}" opacity=".85"/><path d="M40 62 Q60 28 80 62 Z" fill="${c}" opacity=".45"/><rect y="58" width="120" height="4" fill="${c}"/>`,
+    field:`<rect width="120" height="62" fill="${c}" opacity=".85"/><rect x="18" y="10" width="84" height="42" fill="${paper}" opacity=".16"/>`,
+    moss:`<rect width="120" height="62" fill="${paper}"/><circle cx="26" cy="42" r="16" fill="${c}" opacity=".5"/><circle cx="60" cy="49" r="21" fill="${c}" opacity=".38"/><circle cx="94" cy="40" r="13" fill="${c}" opacity=".62"/><rect y="59" width="120" height="3" fill="${c}"/>`,
+    map:`<rect width="120" height="62" fill="${paper}"/><path d="M12 50 L40 24 L72 24 L106 11" stroke="${c}" stroke-width="3" fill="none" stroke-linejoin="round"/><circle cx="12" cy="50" r="4.5" fill="${c}"/><circle cx="40" cy="24" r="4.5" fill="${c}"/><circle cx="72" cy="24" r="4.5" fill="${c}"/><circle cx="106" cy="11" r="4.5" fill="${c}"/>`,
+    waves:`<rect width="120" height="62" fill="${paper}"/><path d="M0 40 Q15 22 30 40 T60 40 T90 40 T120 40" stroke="${c}" stroke-width="2.5" fill="none"/><path d="M0 49 Q15 36 30 49 T60 49 T90 49 T120 49" stroke="${c}" stroke-width="2" fill="none" opacity=".5"/><path d="M0 31 Q15 14 30 31 T60 31 T90 31 T120 31" stroke="${c}" stroke-width="1.5" fill="none" opacity=".3"/>`,
+    bloom:`<rect width="120" height="62" fill="${paper}"/><circle cx="60" cy="34" r="9" fill="${c}"/><circle cx="60" cy="18" r="9" fill="${c}" opacity=".55"/><circle cx="60" cy="50" r="9" fill="${c}" opacity=".55"/><circle cx="44" cy="34" r="9" fill="${c}" opacity=".55"/><circle cx="76" cy="34" r="9" fill="${c}" opacity=".55"/>`,
+    record:`<rect width="120" height="80" fill="${paper}"/><circle cx="40" cy="40" r="15" fill="${c}"/><circle cx="40" cy="40" r="5.5" fill="${paper}"/><path d="M64 27a16 16 0 0 1 0 26" fill="none" stroke="${c}" stroke-width="3.5" stroke-linecap="round"/><path d="M74 18a28 28 0 0 1 0 44" fill="none" stroke="${c}" stroke-width="3.5" stroke-linecap="round" opacity=".55"/><path d="M84 10a40 40 0 0 1 0 60" fill="none" stroke="${c}" stroke-width="3.5" stroke-linecap="round" opacity=".28"/>`,
+    announce:`<rect width="120" height="80" fill="${paper}"/><rect x="16" y="34" width="7" height="12" rx="3" fill="${c}" opacity=".45"/><rect x="29" y="24" width="7" height="32" rx="3" fill="${c}" opacity=".7"/><rect x="42" y="14" width="7" height="52" rx="3" fill="${c}"/><rect x="55" y="22" width="7" height="36" rx="3" fill="${c}" opacity=".85"/><rect x="68" y="18" width="7" height="44" rx="3" fill="${c}"/><rect x="81" y="28" width="7" height="24" rx="3" fill="${c}" opacity=".7"/><rect x="94" y="34" width="7" height="12" rx="3" fill="${c}" opacity=".45"/>`
+  };
+  if(!S[kind]) return '';
+  const icon = kind === 'record' || kind === 'announce';
+  return `<svg class="art${icon ? ' icon' : ''}" viewBox="0 0 ${icon ? '120 80' : '120 62'}" ${icon ? '' : 'preserveAspectRatio="none"'}>${S[kind]}</svg>`;
+}
+
+/* ==================================================================
+   CONNECTORS — straight threads between posts
+   ================================================================== */
+function elbow(x1,y1,x2,y2){
+  const O = 5000;
+  return `M${x1+O} ${y1+O} L${x2+O} ${y2+O}`;
+}
+
+/* ==================================================================
+   RENDER
+   ================================================================== */
+const stage  = document.getElementById('stage');
+const canvas = document.getElementById('canvas');
+const links  = document.getElementById('links');
+let showWeek = 0;
+let showMissing = false;
+
+const inWeek = () => nodes.filter(n => n.week <= showWeek);
+function answerCounts(list){
+  const answers = {};
+  list.forEach(n => { if(n.parent) answers[n.parent] = (answers[n.parent]||0)+1; });
+  return answers;
+}
+const visible = () => inWeek();
+
+function render(){
+  const vis  = visible();
+  const byId = Object.fromEntries(vis.map(n => [n.id, n]));
+
+  canvas.querySelectorAll('.node').forEach(el => el.remove());
+
+  let paths = '';
+  vis.forEach(n => {
+    const p = n.parent && byId[n.parent];
+    if(!p) return;
+    const d = elbow(p.x, p.y, n.x, n.y);
+    const purple = (p.id === 'n2' && n.id === 'n4') || (p.id === 'n4' && n.id === 'n5');
+    const stroke = purple ? 'var(--t5)' : `var(--t${n.thread})`;
+    paths += `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`;
+  });
+  links.innerHTML = paths;
+
+  const answers = answerCounts(vis);
+  canvas.dataset.missing = showMissing ? 'true' : 'false';
+
+  vis.forEach(n => {
+    const el = document.createElement('article');
+    el.style.left = n.x + 'px';
+    el.style.top  = n.y + 'px';
+    el.style.setProperty('--sat', `var(--t${n.thread})`);
+    el.style.setProperty('--tint', `var(--p${n.thread})`);
+    el.dataset.thread = n.thread;
+    const a = answers[n.id] || 0;
+    const dim = showMissing && a > 0;
+    el.className = 'node kind-' + n.kind + (dim ? ' dim' : '');
+    const face = n.id === landId ? `<svg class="face" viewBox="0 0 38 38" aria-hidden="true"><circle cx="19" cy="19" r="17" fill="#fff"/><circle cx="13" cy="16" r="2" fill="#141412"/><circle cx="25" cy="16" r="2" fill="#141412"/><path d="M12 23q7 7 14 0" fill="none" stroke="#141412" stroke-width="1.7" stroke-linecap="round"/></svg>` : '';
+    const ask = `
+      <div class="ask">
+        ${face}
+        <p class="q">${esc(n.ask)}</p>
+        <div class="row">
+          <button data-answer="${n.id}"><span>answer this</span></button>
+          <span class="count">${a ? a + ' answered' : 'unanswered'}</span>
+        </div>
+      </div>`;
+    const meta = `<div class="meta"><span>${esc(n.kind)}</span><span class="by">${esc(n.by)}</span></div>`;
+    let form = '';
+    if(n.kind === 'photo'){
+      form = `<div class="form">
+        <span class="sticker">${esc(n.kind)}</span>
+        <span class="by">${esc(n.by)}</span>
+        ${art(n.art, n.thread, n.fit)}
+        <p class="caption">${esc(n.body)}</p>
+      </div>`;
+    }else if(n.kind === 'writing'){
+      form = `<div class="form">${meta}${n.writing ? writingHTML(n.writing) : ''}<p class="body">${esc(n.body)}</p></div>`;
+    }else if(n.kind === 'drawing'){
+      form = `<div class="form"><i class="tape l"></i><i class="tape r"></i>${meta}${art(n.art, n.thread, n.fit)}<p class="body">${esc(n.body)}</p></div>`;
+    }else if(n.kind === 'song' || n.kind === 'sound'){
+      form = `<div class="form">${meta}${art(n.art, n.thread, n.fit || 'mark')}${n.title ? `<p class="piece">${esc(n.title)}</p>` : ''}<p class="body">${esc(n.body)}</p></div>`;
+    }else{
+      form = `<div class="form">${meta}${art(n.art, n.thread, n.fit)}<p class="body">${esc(n.body)}</p></div>`;
+    }
+    el.innerHTML = `<div class="dot"><i></i><b>${esc(n.kind)}</b></div><div class="shell">${form}${ask}</div>`;
+    canvas.appendChild(el);
+  });
+
+  document.getElementById('count').textContent    = vis.length;
+  document.getElementById('openAsks').textContent = vis.filter(n => !answers[n.id]).length;
+}
+
+/* ==================================================================
+   PAN + ZOOM + LEVEL OF DETAIL
+   ================================================================== */
+let view = {x:0, y:0, k:0.72};
+
+function frame(k){
+  const vis = visible();
+  if(!vis.length) return;
+  const xs = vis.map(n => n.x);
+  const ys = vis.map(n => n.y);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  if(k == null){
+    const spanX = (Math.max(...xs) - Math.min(...xs)) + 400;
+    const spanY = (Math.max(...ys) - Math.min(...ys)) + 640;
+    k = clampK(Math.min(0.78, (stage.clientWidth - 36) / spanX, (stage.clientHeight - 150) / spanY));
+  }
+  view.k = k;
+  view.x = -cx * k;
+  view.y = -cy * k;
+}
+
+function applyView(){
+  canvas.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.k})`;
+  canvas.dataset.lod = view.k < 0.28 ? 'dots' : (view.k < 0.42 ? 'mid' : 'full');
+  document.getElementById('pct').textContent = Math.round(view.k * 100) + '%';
+}
+const clampK = k => Math.min(2.2, Math.max(0.12, k));
+
+let drag = null;
+stage.addEventListener('pointerdown', e => {
+  if(e.target.closest('button') || e.target.closest('#panel') || e.target.closest('.writing')) return;
+  drag = {sx:e.clientX, sy:e.clientY, vx:view.x, vy:view.y};
+  stage.classList.add('dragging');
+  stage.setPointerCapture(e.pointerId);
+});
+stage.addEventListener('pointermove', e => {
+  if(!drag) return;
+  view.x = drag.vx + (e.clientX - drag.sx);
+  view.y = drag.vy + (e.clientY - drag.sy);
+  applyView();
+});
+stage.addEventListener('pointerup', () => { drag = null; stage.classList.remove('dragging'); });
+
+stage.addEventListener('wheel', e => {
+  const writing = e.target.closest('.writing');
+  if(writing && writing.scrollHeight > writing.clientHeight + 1){
+    const atTop = writing.scrollTop <= 0 && e.deltaY < 0;
+    const atBottom = writing.scrollTop + writing.clientHeight >= writing.scrollHeight - 1 && e.deltaY > 0;
+    if(!atTop && !atBottom){
+      e.preventDefault();
+      writing.scrollTop += e.deltaY;
+      return;
+    }
+  }
+  e.preventDefault();
+  const r = stage.getBoundingClientRect();
+  const cx = e.clientX - r.left - r.width/2;
+  const cy = e.clientY - r.top  - r.height/2;
+  let dy = e.deltaY;
+  if(e.deltaMode === 1) dy *= 16;
+  else if(e.deltaMode === 2) dy *= 400;
+  dy = Math.max(-70, Math.min(70, dy));
+  const old = view.k;
+  view.k = clampK(view.k * Math.exp(-dy * 0.0028));
+  view.x = cx - (cx - view.x) * (view.k/old);
+  view.y = cy - (cy - view.y) * (view.k/old);
+  applyView();
+}, {passive:false});
+
+document.getElementById('zoomctl').addEventListener('click', e => {
+  const z = e.target.dataset.zoom;
+  if(!z) return;
+  if(z === 'fit'){ frame(showWeek ? 0.24 : null); }
+  else { view.k = clampK(view.k * (z === 'in' ? 1.3 : 0.77)); }
+  applyView();
+});
+
+function flyTo(n, k = 0.95){
+  view.k = k; view.x = -n.x*k; view.y = -n.y*k;
+  canvas.style.transition = 'transform .6s cubic-bezier(.3,.8,.3,1)';
+  applyView();
+  setTimeout(() => canvas.style.transition = '', 650);
+}
+
+document.getElementById('quietBtn').addEventListener('click', () => openChooser());
+document.getElementById('worldsBtn').addEventListener('click', () => {
+  location.href = 'worlds.html';
+});
+
+/* ==================================================================
+   ANSWERING
+   ================================================================== */
+let answering = null, chosenKind = 'caption';
+const panel = document.getElementById('panel');
+const kindPick = document.getElementById('kindPick');
+const connectPick = document.getElementById('connectPick');
+const asked = document.getElementById('asked');
+
+function askedName(n){
+  if(!n.by) return 'Someone';
+  return n.by === 'you' ? 'You' : n.by;
+}
+
+function populateConnect(){
+  connectPick.innerHTML = visible().map(n => `
+    <button type="button" data-connect="${n.id}" aria-pressed="${answering && answering.id === n.id}">
+      <span class="who">${esc(n.by)} · ${esc(n.kind)}</span>
+      <span class="snip">${esc(n.ask)}</span>
+    </button>`).join('');
+}
+
+function showAsked(n){
+  answering = n;
+  document.getElementById('panelEyebrow').textContent = askedName(n) + ' asked';
+  document.getElementById('panelQ').textContent = n.ask;
+  document.getElementById('panelBy').textContent = (n.by ? n.by + ' left' : 'Left') + ' this next to their ' + n.kind;
+  asked.classList.add('on');
+  [...connectPick.children].forEach(b => b.setAttribute('aria-pressed', b.dataset.connect === n.id));
+}
+
+connectPick.addEventListener('click', e => {
+  const b = e.target.closest('[data-connect]');
+  if(!b) return;
+  const n = nodes.find(x => x.id === b.dataset.connect);
+  if(!n) return;
+  showAsked(n);
+  document.getElementById('err').classList.remove('on');
+  flyTo(n, view.k < 0.55 ? 0.85 : view.k);
+});
+
+kindPick.innerHTML = KINDS.map(k =>
+  `<button data-kind="${k}" aria-pressed="${k===chosenKind}">${k}</button>`).join('');
+kindPick.addEventListener('click', e => {
+  const k = e.target.dataset.kind; if(!k) return;
+  chosenKind = k;
+  [...kindPick.children].forEach(b => b.setAttribute('aria-pressed', b.dataset.kind === k));
+});
+
+function resetDraft(){
+  document.getElementById('answerText').value = '';
+  document.getElementById('newAsk').value = '';
+  document.getElementById('err').classList.remove('on');
+}
+function openPanel(id){
+  const n = nodes.find(x => x.id === id);
+  panel.classList.remove('choosing');
+  showAsked(n);
+  resetDraft();
+  panel.classList.add('open');
+  panel.setAttribute('aria-hidden','false');
+}
+function openChooser(){
+  answering = null;
+  populateConnect();
+  asked.classList.remove('on');
+  resetDraft();
+  panel.classList.add('open');
+  panel.classList.toggle('choosing', nodes.length > 0);
+  panel.setAttribute('aria-hidden','false');
+}
+function closePanel(){
+  answering = null;
+  asked.classList.remove('on');
+  panel.classList.remove('open','choosing');
+  panel.setAttribute('aria-hidden','true');
+}
+
+canvas.addEventListener('click', e => {
+  const b = e.target.closest('[data-answer]');
+  if(b) openPanel(b.dataset.answer);
+});
+document.getElementById('cancelBtn').addEventListener('click', closePanel);
+
+document.getElementById('submitBtn').addEventListener('click', () => {
+  const text = document.getElementById('answerText').value.trim();
+  const ask  = document.getElementById('newAsk').value.trim();
+  const err = document.getElementById('err');
+  if(!answering && nodes.length){
+    err.textContent = 'Pick who you’re connecting to.';
+    err.classList.add('on');
+    return;
+  }
+  if(!text || !ask){
+    err.textContent = 'Both fields are needed — the question is what keeps the world growing.';
+    err.classList.add('on');
+    return;
+  }
+
+  let nn;
+  if(!answering){
+    nn = {
+      id:'u'+Date.now(), parent:null,
+      thread: 2, week: showWeek,
+      kind: chosenKind, by: localStorage.getItem('makeshift-name') || 'you', art:'waves',
+      body: text, ask: ask,
+      x: 0, y: 0
+    };
+  }else{
+    const sibs = nodes.filter(n => n.parent === answering.id).length;
+    const ang  = (sibs * 1.1) + (answering.thread * 1.4);
+    const dist = 470 + sibs * 90;
+    nn = {
+      id:'u'+Date.now(), parent:answering.id,
+      thread: answering.thread, week: showWeek,
+      kind: chosenKind, by: localStorage.getItem('makeshift-name') || 'you', art:'waves',
+      body: text, ask: ask,
+      x: answering.x + Math.cos(ang)*dist,
+      y: answering.y + Math.sin(ang)*dist
+    };
+  }
+  nodes.push(nn);
+  closePanel();
+  render();
+  flyTo(nn, 0.9);
+});
+
+let worldsOpen = false;
+function unlockWorlds(){
+  if(worldsOpen) return;
+  worldsOpen = true;
+  const beat = document.getElementById('beat');
+  beat.classList.add('on');
+  beat.addEventListener('click', () => {
+    beat.classList.remove('on');
+    document.getElementById('worldsBtn').hidden = false;
+  }, {once:true});
+}
+
+document.getElementById('missingBtn').addEventListener('click', e => {
+  showMissing = !showMissing;
+  e.target.setAttribute('aria-pressed', showMissing ? 'true' : 'false');
+  e.target.textContent = showMissing ? 'show everything' : "see what's missing";
+  render();
+});
+
+/* ==================================================================
+   A WEEK LATER
+   ================================================================== */
+document.getElementById('timeBtn').addEventListener('click', e => {
+  showWeek = showWeek ? 0 : 1;
+  e.target.setAttribute('aria-pressed', showWeek ? 'true':'false');
+  e.target.textContent = showWeek ? 'back to the start' : "see what's been added";
+  render();
+  frame(showWeek ? 0.24 : null);
+  canvas.style.transition = 'transform .7s cubic-bezier(.3,.8,.3,1)';
+  applyView();
+  setTimeout(() => canvas.style.transition = '', 750);
+});
+
+const landId = null;
+render();
+frame();
+applyView();
+</script>
+</body>
+</html>
